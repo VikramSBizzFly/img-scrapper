@@ -29,7 +29,15 @@ npm install -g img-scrapper-0.1.0.tgz
 npm install -g git+https://github.com/VikramSBizzFly/img-scrapper.git
 ```
 
-(The `prepare` script compiles TypeScript during install.)
+The repo ships prebuilt code in `dist/`, so installing doesn't compile anything.
+
+**Troubleshooting:** if an earlier install failed (for example with `'tsc' is not recognized`), remove the
+leftovers and install again:
+
+```sh
+npm uninstall -g img-scrapper
+npm install -g git+https://github.com/VikramSBizzFly/img-scrapper.git
+```
 
 ## Usage
 
@@ -110,13 +118,17 @@ Excel sheets: **Summary**, **Images**, **Unique Sources**, **Files** and **Error
 ## Development
 
 ```sh
-npm install                            # also builds dist/ via "prepare"
+npm install                            # install dependencies
 npm run dev -- crawl localhost:3000    # run from source with tsx, no build step
 npm run dev -- scan ../some-project
 npm run typecheck                      # type-check only
 npm run build                          # compile src/ -> dist/, then obfuscate dist/ (postbuild)
 npm link                               # expose the global img-scrapper command (re-run build after changes)
+npm run release                        # clean build + stage dist/ (run before committing src/ changes)
 ```
+
+`dist/` is committed because global git installs can't run a build step. CI (`.github/workflows/check-dist.yml`)
+fails if `dist/` doesn't match a fresh build of `src/`.
 
 Project layout:
 

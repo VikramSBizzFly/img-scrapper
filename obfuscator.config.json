@@ -1,5 +1,6 @@
 {
   "target": "node",
+  "seed": 1,
   "compact": true,
   "simplify": true,
   "controlFlowFlattening": true,
