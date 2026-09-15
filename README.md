@@ -121,19 +121,29 @@ Excel sheets: **Summary**, **Images**, **Unique Sources**, **Files** and **Error
 
 ```sh
 npm install                            # install dependencies
+npm run hooks                          # once after cloning: enable the pre-commit hook
 npm run dev -- crawl localhost:3000    # run from source with tsx, no build step
 npm run dev -- scan ../some-project
 npm run typecheck                      # type-check only
 npm run compile                        # compile src/ -> dist/, then obfuscate dist/
 npm link                               # expose the global img-scrapper command (re-run compile after changes)
-npm run release                        # clean build + stage dist/ (run before committing src/ changes)
+npm run format                         # format everything with Prettier
+npm run release                        # clean build + stage dist/ (the pre-commit hook does this for you)
 ```
+
+**Pre-commit hook** (husky + lint-staged, see `lint-staged.config.mjs`). On every commit it:
+
+1. formats staged files with Prettier
+2. if `src/`, `tsconfig*.json`, `obfuscator.config.json` or `package.json` are staged, runs `npm run typecheck`
+   (a type error blocks the commit) and `npm run release`, so the rebuilt `dist/` goes into the same commit
+
+The hook is enabled with `npm run hooks` instead of the usual `"prepare": "husky"` for the reason below.
 
 `dist/` is committed because global git installs can't run a build step. For the same reason `package.json`
 must not have `build`, `prepare`, `prepack`, `install`, `preinstall` or `postinstall` scripts (hence `compile`
 instead of `build`): with any of them, npm tries to build the clone
 during `npm install -g git+...` and breaks the install. CI (`.github/workflows/check-dist.yml`)
-fails if `dist/` doesn't match a fresh build of `src/`.
+fails if formatting is off or `dist/` doesn't match a fresh build of `src/` (e.g. a commit made with `--no-verify`).
 
 Project layout:
 
