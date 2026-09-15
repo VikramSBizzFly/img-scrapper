@@ -10,14 +10,13 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
-    "postbuild": "npm run obfuscate",
+    "compile": "tsc -p tsconfig.build.json && npm run obfuscate",
     "obfuscate": "javascript-obfuscator dist --output dist --config obfuscator.config.json",
     "dev": "tsx src/index.ts",
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
     "clean": "rimraf dist",
-    "release": "npm run clean && npm run build && git add dist"
+    "release": "npm run clean && npm run compile && git add dist"
   },
   "engines": {
     "node": ">=22.12"

@@ -122,13 +122,14 @@ npm install                            # install dependencies
 npm run dev -- crawl localhost:3000    # run from source with tsx, no build step
 npm run dev -- scan ../some-project
 npm run typecheck                      # type-check only
-npm run build                          # compile src/ -> dist/, then obfuscate dist/ (postbuild)
-npm link                               # expose the global img-scrapper command (re-run build after changes)
+npm run compile                        # compile src/ -> dist/, then obfuscate dist/
+npm link                               # expose the global img-scrapper command (re-run compile after changes)
 npm run release                        # clean build + stage dist/ (run before committing src/ changes)
 ```
 
 `dist/` is committed because global git installs can't run a build step. For the same reason `package.json`
-must not have `prepare`, `prepack` or `preinstall` scripts: with any of them, npm tries to build the clone
+must not have `build`, `prepare`, `prepack`, `install`, `preinstall` or `postinstall` scripts (hence `compile`
+instead of `build`): with any of them, npm tries to build the clone
 during `npm install -g git+...` and breaks the install. CI (`.github/workflows/check-dist.yml`)
 fails if `dist/` doesn't match a fresh build of `src/`.
 
