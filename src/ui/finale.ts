@@ -23,7 +23,9 @@ export async function finale(outPath: string): Promise<void> {
     const sparkles = caps.richUnicode ? ['✦', '✧', '⋆', '·'] : ['*', '+', '.'];
     const region = new LiveRegion((frame) => {
       const s = sparkles[frame % sparkles.length] ?? '*';
-      return [`  ${gradient(s, BRAND, frame / 6)} ${c.bold(gradient(label, BRAND, frame / 8))} ${c.dim(symbols.arrow)} ${target}`];
+      return [
+        `  ${gradient(s, BRAND, frame / 6)} ${c.bold(gradient(label, BRAND, frame / 8))} ${c.dim(symbols.arrow)} ${target}`,
+      ];
     });
     console.log('');
     region.start();

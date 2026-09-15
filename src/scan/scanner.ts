@@ -188,7 +188,12 @@ export function scanFile(text: string, relativeFile: string, root: string): Sour
       const looksLikeImage = IMAGE_EXT_RE.test(raw) || raw.startsWith('data:image');
       if (!looksLikeImage && !isCssFile) continue;
       const value = raw.startsWith('data:') ? `data:${raw.slice(5).split(/[;,]/)[0]} (inline)` : raw;
-      record(m.index, 'css url', { value, srcType: TEMPLATE_SYNTAX_RE.test(raw) ? 'dynamic' : 'static' }, { snippet: chunk });
+      record(
+        m.index,
+        'css url',
+        { value, srcType: TEMPLATE_SYNTAX_RE.test(raw) ? 'dynamic' : 'static' },
+        { snippet: chunk },
+      );
     }
   }
 
@@ -288,7 +293,11 @@ function expandSrcset(srcset: SrcValue | null): SrcValue[] {
 // ---------- paths & positions ----------
 
 /** Works out which file a static src points to and whether it exists. */
-function resolveAsset(src: string, absoluteFile: string, root: string): { resolvedPath: string | null; exists: FileExists } {
+function resolveAsset(
+  src: string,
+  absoluteFile: string,
+  root: string,
+): { resolvedPath: string | null; exists: FileExists } {
   if (!src || /^([a-z]+:)?\/\//i.test(src) || src.startsWith('data:')) return { resolvedPath: null, exists: 'n/a' };
 
   let clean = src.split(/[?#]/)[0] ?? '';
@@ -305,11 +314,17 @@ function resolveAsset(src: string, absoluteFile: string, root: string): { resolv
   } else if (clean.startsWith('/')) {
     candidates = PUBLIC_DIRS.map((dir) => path.join(root, dir, clean));
   } else {
-    candidates = [path.resolve(path.dirname(absoluteFile), clean), ...PUBLIC_DIRS.map((dir) => path.join(root, dir, clean))];
+    candidates = [
+      path.resolve(path.dirname(absoluteFile), clean),
+      ...PUBLIC_DIRS.map((dir) => path.join(root, dir, clean)),
+    ];
   }
 
   const hit = candidates.find((candidate) => existsSync(candidate));
-  const shown = path.relative(root, hit ?? candidates[0] ?? clean).split(path.sep).join('/');
+  const shown = path
+    .relative(root, hit ?? candidates[0] ?? clean)
+    .split(path.sep)
+    .join('/');
   return { resolvedPath: shown, exists: hit ? 'yes' : 'no' };
 }
 

@@ -35,7 +35,12 @@ export async function writeWorkbook(filePath: string, sheets: Sheet[]): Promise<
       const added = ws.addRow(truncateRow(row));
       for (const col of sheet.columns) {
         const value = row[col.key];
-        if (col.link && typeof value === 'string' && /^https?:\/\//i.test(value) && value.length <= MAX_HYPERLINK_LENGTH) {
+        if (
+          col.link &&
+          typeof value === 'string' &&
+          /^https?:\/\//i.test(value) &&
+          value.length <= MAX_HYPERLINK_LENGTH
+        ) {
           added.getCell(col.key).value = { text: value, hyperlink: value };
         }
       }

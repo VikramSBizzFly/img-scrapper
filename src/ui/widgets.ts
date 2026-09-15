@@ -96,7 +96,9 @@ export function box(lines: string[], options: BoxOptions = {}): string[] {
   const topFill = h.repeat(Math.max(0, inner - visibleWidth(title) - 1));
   const top = gradient(`${tl}${h}`, stops) + c.bold(title) + gradient(`${topFill}${tr}`, stops, 0.3);
   const side = (i: number): string => gradient(v, stops, i / Math.max(1, lines.length));
-  const body = lines.map((line, i) => `${side(i)}${' '.repeat(pad)}${padEnd(line, inner - pad * 2)}${' '.repeat(pad)}${side(i + 1)}`);
+  const body = lines.map(
+    (line, i) => `${side(i)}${' '.repeat(pad)}${padEnd(line, inner - pad * 2)}${' '.repeat(pad)}${side(i + 1)}`,
+  );
   const bottom = gradient(`${bl}${h.repeat(inner)}${br}`, stops, 0.5);
   return [top, ...body, bottom];
 }

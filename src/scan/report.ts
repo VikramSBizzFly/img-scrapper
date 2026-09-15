@@ -31,7 +31,13 @@ export function buildScanReport(result: ScanResult): Sheet[] {
 
     const key = uniqueKey(img);
     if (!key) continue;
-    const entry = unique.get(key) ?? { key, srcType: img.srcType, exists: img.exists, usages: 0, files: new Set<string>() };
+    const entry = unique.get(key) ?? {
+      key,
+      srcType: img.srcType,
+      exists: img.exists,
+      usages: 0,
+      files: new Set<string>(),
+    };
     entry.usages++;
     entry.files.add(img.file);
     unique.set(key, entry);

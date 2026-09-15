@@ -160,7 +160,12 @@ function describeUrl(
   if (raw.startsWith('data:')) {
     const mime = raw.slice(5).split(/[;,]/)[0] ?? '';
     const subtype = mime.split('/')[1]?.replace('+xml', '') ?? null;
-    return { imageUrl: `data:${mime} (inline, ${raw.length} chars)`, fileName: null, extension: subtype, internal: true };
+    return {
+      imageUrl: `data:${mime} (inline, ${raw.length} chars)`,
+      fileName: null,
+      extension: subtype,
+      internal: true,
+    };
   }
 
   const url = resolveUrl(raw, base);

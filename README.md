@@ -4,10 +4,10 @@ Lists every image of a website in an Excel report. It doesn't download anything 
 
 Two ways to use it:
 
-| Command | Input | Tells you |
-|---|---|---|
-| `crawl` | a running site, e.g. `http://localhost:3000` | which **page** shows which image |
-| `scan` | a project folder | which **file + line** has which image |
+| Command | Input                                        | Tells you                             |
+| ------- | -------------------------------------------- | ------------------------------------- |
+| `crawl` | a running site, e.g. `http://localhost:3000` | which **page** shows which image      |
+| `scan`  | a project folder                             | which **file + line** has which image |
 
 ## Install (for colleagues)
 
@@ -57,11 +57,11 @@ every page, and a summary box with charts of image types when it finishes.
 
 Animations and colors turn off automatically when output is piped or in CI. To turn them off yourself:
 
-| Flag / env | Effect |
-|---|---|
-| `--plain` | no animations, no colors |
-| `--no-color` or `NO_COLOR=1` | no colors |
-| `--no-banner` (on `crawl` / `scan`) | skip the welcome banner |
+| Flag / env                          | Effect                   |
+| ----------------------------------- | ------------------------ |
+| `--plain`                           | no animations, no colors |
+| `--no-color` or `NO_COLOR=1`        | no colors                |
+| `--no-banner` (on `crawl` / `scan`) | skip the welcome banner  |
 
 ### crawl: visit every page of a site
 
@@ -72,6 +72,7 @@ img-scrapper crawl localhost:5173 --browser     # React / Vue / Angular apps
 ```
 
 How it works:
+
 1. Start with a to-do list containing the start URL.
 2. Take a page from the list, load it and read its HTML with cheerio.
 3. Record every image: `<img src>`, lazy `data-src`, `srcset`, `<picture>`, CSS `url()`,
@@ -80,15 +81,15 @@ How it works:
    (`#hash` and trailing `/` are ignored, and PDFs, mailto and external links are skipped).
 5. Repeat until the list is empty or `--max-pages` / `--depth` is reached. Press Ctrl+C to stop early and still get the report.
 
-| Option | Default | |
-|---|---|---|
-| `-o, --out <file>` | `img-crawl-report.xlsx` | output file |
-| `-m, --max-pages <n>` | 500 | stop after n pages |
-| `-d, --depth <n>` | 10 | clicks away from the start page (0 = start page only) |
-| `-c, --concurrency <n>` | 5 | pages loaded at once |
-| `-t, --timeout <ms>` | 15000 | per page |
-| `-b, --browser` | off | render pages with JavaScript (needs Chrome, Edge or Playwright Chromium) |
-| `--no-sitemap` | | don't read `/sitemap.xml` for extra pages |
+| Option                  | Default                 |                                                                          |
+| ----------------------- | ----------------------- | ------------------------------------------------------------------------ |
+| `-o, --out <file>`      | `img-crawl-report.xlsx` | output file                                                              |
+| `-m, --max-pages <n>`   | 500                     | stop after n pages                                                       |
+| `-d, --depth <n>`       | 10                      | clicks away from the start page (0 = start page only)                    |
+| `-c, --concurrency <n>` | 5                       | pages loaded at once                                                     |
+| `-t, --timeout <ms>`    | 15000                   | per page                                                                 |
+| `-b, --browser`         | off                     | render pages with JavaScript (needs Chrome, Edge or Playwright Chromium) |
+| `--no-sitemap`          |                         | don't read `/sitemap.xml` for extra pages                                |
 
 Excel sheets: **Summary**, **Images** (one row per image per page), **Unique Images**
 (with page count), **Pages** and **Errors**.
@@ -105,6 +106,7 @@ img-scrapper scan ./my-project -o images.xlsx -i "**/tests/**"
 
 It reads `.html .jsx .tsx .js .ts .vue .svelte .astro .php .ejs .hbs .twig .erb .cshtml .css .scss .less .md .mdx`
 and skips `node_modules`, `dist`, `build`, `.next` and similar folders. It finds:
+
 - `<img>`, `<Image>` (Next.js), `<picture><source>`, `srcset`, lazy `data-src`
 - Vue `:src`, Angular `[src]`, JSX `src={...}`
 - `import logo from './logo.png'` and `require('./a.png')`. `<img src={logo}>` is resolved to the file

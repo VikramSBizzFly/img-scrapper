@@ -4,16 +4,7 @@ export type AltStatus = 'present' | 'empty' | 'missing' | 'dynamic' | 'n/a';
 // ---------- crawl ----------
 
 /** Where on a live page an image reference was found. */
-export type PageImageSource =
-  | 'img'
-  | 'lazy'
-  | 'srcset'
-  | 'picture'
-  | 'css'
-  | 'meta'
-  | 'icon'
-  | 'poster'
-  | 'svg';
+export type PageImageSource = 'img' | 'lazy' | 'srcset' | 'picture' | 'css' | 'meta' | 'icon' | 'poster' | 'svg';
 
 export interface PageImage {
   pageUrl: string;
@@ -57,15 +48,7 @@ export interface CrawlResult {
 // ---------- scan ----------
 
 export type SourceImageKind =
-  | 'img'
-  | 'Image component'
-  | 'picture source'
-  | 'lazy'
-  | 'srcset'
-  | 'css url'
-  | 'import'
-  | 'require'
-  | 'markdown';
+  'img' | 'Image component' | 'picture source' | 'lazy' | 'srcset' | 'css url' | 'import' | 'require' | 'markdown';
 
 /** static = literal path, imported = resolved through import/require, dynamic = unknown until runtime. */
 export type SrcType = 'static' | 'imported' | 'dynamic' | 'missing';

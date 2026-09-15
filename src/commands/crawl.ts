@@ -35,7 +35,10 @@ export async function runCrawl(rawUrl: string, options: CrawlCommandOptions): Pr
       [
         ['Target', c.bold(c.cyan(startUrl.href))],
         ['Mode', mode],
-        ['Limits', `${options.maxPages} pages ${symbols.dot} depth ${options.depth} ${symbols.dot} ${options.concurrency} at once`],
+        [
+          'Limits',
+          `${options.maxPages} pages ${symbols.dot} depth ${options.depth} ${symbols.dot} ${options.concurrency} at once`,
+        ],
         ['Output', displayPath(outPath)],
       ],
       1,
@@ -53,7 +56,11 @@ export async function runCrawl(rawUrl: string, options: CrawlCommandOptions): Pr
   );
 
   const loader: PageLoader = options.browser
-    ? await task('Launching headless browser', () => createBrowserLoader(options.timeout), () => 'Headless browser ready')
+    ? await task(
+        'Launching headless browser',
+        () => createBrowserLoader(options.timeout),
+        () => 'Headless browser ready',
+      )
     : createFetchLoader(options.timeout);
 
   let stopRequested = false;
@@ -65,7 +72,9 @@ export async function runCrawl(rawUrl: string, options: CrawlCommandOptions): Pr
   const onSigint = (): void => {
     if (stopRequested) process.exit(130);
     stopRequested = true;
-    region.log(`  ${c.yellow(symbols.warn)} ${c.yellow('Stopping')} ${c.dim('- finishing open pages, then writing the report (Ctrl+C again to quit)')}`);
+    region.log(
+      `  ${c.yellow(symbols.warn)} ${c.yellow('Stopping')} ${c.dim('- finishing open pages, then writing the report (Ctrl+C again to quit)')}`,
+    );
   };
   process.on('SIGINT', onSigint);
 
@@ -83,7 +92,10 @@ export async function runCrawl(rawUrl: string, options: CrawlCommandOptions): Pr
       useSitemap: options.sitemap,
       shouldStop: () => stopRequested,
       onSitemap: (count) => {
-        if (count > 0) region.log(`  ${c.green(symbols.ok)} sitemap.xml ${c.dim('listed')} ${c.bold(String(count))} ${c.dim('URLs')}`);
+        if (count > 0)
+          region.log(
+            `  ${c.green(symbols.ok)} sitemap.xml ${c.dim('listed')} ${c.bold(String(count))} ${c.dim('URLs')}`,
+          );
       },
       onPageStart: (_url, progress) => {
         latest = progress;
@@ -131,19 +143,27 @@ async function probe(url: string, timeoutMs: number): Promise<{ status: number; 
     return { status: res.status, ms: Date.now() - t0 };
   } catch (err) {
     const cause = (err as Error & { cause?: NodeJS.ErrnoException }).cause;
-    if (cause?.code === 'ECONNREFUSED') throw new Error(`Nothing is running at ${url}. Start your dev server and try again.`);
+    if (cause?.code === 'ECONNREFUSED')
+      throw new Error(`Nothing is running at ${url}. Start your dev server and try again.`);
     if ((err as Error).name === 'TimeoutError') throw new Error(`${url} did not respond within ${timeoutMs}ms.`);
     throw new Error(`Could not reach ${url}: ${cause?.message ?? (err as Error).message}`);
   }
 }
 
-function dashboard(p: CrawlProgress, options: CrawlCommandOptions, started: number, frame: number, stopping: boolean): string[] {
+function dashboard(
+  p: CrawlProgress,
+  options: CrawlCommandOptions,
+  started: number,
+  frame: number,
+  stopping: boolean,
+): string[] {
   const elapsed = Date.now() - started;
   const total = Math.max(1, Math.min(options.maxPages, p.visited + p.queued + p.active.length));
   const ratio = p.visited / total;
   const rate = p.visited / Math.max(elapsed / 1000, 0.001);
   const remaining = total - p.visited;
-  const eta = p.visited > 2 && rate > 0 ? ` ${c.dim('~')}${formatDuration((remaining / rate) * 1000)} ${c.dim('left')}` : '';
+  const eta =
+    p.visited > 2 && rate > 0 ? ` ${c.dim('~')}${formatDuration((remaining / rate) * 1000)} ${c.dim('left')}` : '';
   const barWidth = Math.max(10, Math.min(36, columns() - 60));
 
   const title = stopping ? c.yellow('Stopping') : gradient('Crawling', BRAND, frame / 25);
@@ -168,7 +188,12 @@ function stat(label: string, value: string, color: (s: string) => string): strin
 
 function pageLine(page: PageResult, origin: string): string {
   const status = page.status === null ? c.red('ERR') : statusColor(page.status);
-  const icon = page.status === null || page.status >= 400 ? c.red(symbols.fail) : page.note ? c.dim(symbols.dot) : c.green(symbols.ok);
+  const icon =
+    page.status === null || page.status >= 400
+      ? c.red(symbols.fail)
+      : page.note
+        ? c.dim(symbols.dot)
+        : c.green(symbols.ok);
   const url = shortUrl(page.url, origin);
   const detail = page.note
     ? c.dim(page.note)
@@ -211,9 +236,15 @@ function printSummary(result: CrawlResult, elapsed: number, stopped: boolean): v
   ]);
 
   const sections: string[] = [...stats];
-  const types = topCounts(result.images.map((i) => i.extension ?? 'other'), 6);
+  const types = topCounts(
+    result.images.map((i) => i.extension ?? 'other'),
+    6,
+  );
   if (types.length > 0) sections.push('', c.bold('Image types'), ...barChart(types));
-  const sources = topCounts(result.images.map((i) => i.source), 6);
+  const sources = topCounts(
+    result.images.map((i) => i.source),
+    6,
+  );
   if (sources.length > 0) sections.push('', c.bold('Found in'), ...barChart(sources));
 
   console.log('');

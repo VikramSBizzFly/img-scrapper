@@ -12,7 +12,7 @@ type Mode = 'crawl' | 'scan';
 /** Interactive mode for `img-scrapper` with no arguments. */
 export async function runWizard(): Promise<void> {
   await showBanner();
-  p.intro(c.bold(gradient(' let\'s audit some images ', BRAND)));
+  p.intro(c.bold(gradient(" let's audit some images ", BRAND)));
 
   const mode = guard(
     await p.select<Mode>({
@@ -70,9 +70,15 @@ async function crawlWizard(): Promise<void> {
   let depth = 10;
   let concurrency = 5;
   if (guard(await p.confirm({ message: 'Change advanced options (depth, concurrency)?', initialValue: false }))) {
-    depth = Number(guard(await p.text({ message: 'Max link depth', placeholder: '10', defaultValue: '10', validate: nonNegativeInt })));
+    depth = Number(
+      guard(
+        await p.text({ message: 'Max link depth', placeholder: '10', defaultValue: '10', validate: nonNegativeInt }),
+      ),
+    );
     concurrency = Number(
-      guard(await p.text({ message: 'Pages loaded at once', placeholder: '5', defaultValue: '5', validate: positiveInt })),
+      guard(
+        await p.text({ message: 'Pages loaded at once', placeholder: '5', defaultValue: '5', validate: positiveInt }),
+      ),
     );
   }
 
@@ -123,7 +129,12 @@ async function scanWizard(): Promise<void> {
 
   const out = await askOutput('img-scan-report.xlsx');
 
-  const command = ['img-scrapper scan', `"${dir}"`, ...ignore.map((g) => `-i "${g}"`), out !== 'img-scan-report.xlsx' ? `-o "${out}"` : '']
+  const command = [
+    'img-scrapper scan',
+    `"${dir}"`,
+    ...ignore.map((g) => `-i "${g}"`),
+    out !== 'img-scan-report.xlsx' ? `-o "${out}"` : '',
+  ]
     .filter(Boolean)
     .join(' ');
   p.note(c.cyan(command), 'Tip: skip the questions next time');
