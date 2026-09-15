@@ -1,0 +1,57 @@
+{
+  "name": "img-scrapper",
+  "version": "0.1.0",
+  "description": "CLI that lists every image of a website or codebase in an Excel report",
+  "type": "module",
+  "bin": {
+    "img-scrapper": "dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "postbuild": "npm run obfuscate",
+    "obfuscate": "javascript-obfuscator dist --output dist --config obfuscator.config.json",
+    "dev": "tsx src/index.ts",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "clean": "rimraf dist",
+    "prepare": "npm run build",
+    "prepack": "npm run clean && npm run build"
+  },
+  "engines": {
+    "node": ">=22.12"
+  },
+  "keywords": [
+    "cli",
+    "scraper",
+    "images"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/VikramSBizzFly/img-scrapper.git"
+  },
+  "homepage": "https://github.com/VikramSBizzFly/img-scrapper#readme",
+  "bugs": {
+    "url": "https://github.com/VikramSBizzFly/img-scrapper/issues"
+  },
+  "private": true,
+  "dependencies": {
+    "cheerio": "^1.2.0",
+    "commander": "^15.0.0",
+    "exceljs": "^4.4.0",
+    "fast-glob": "^3.3.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.2",
+    "javascript-obfuscator": "^5.7.0",
+    "rimraf": "^6.1.3",
+    "tsx": "^4.23.13",
+    "typescript": "^7.0.2"
+  },
+  "optionalDependencies": {
+    "playwright": "^1.63.0"
+  }
+}
