@@ -9,7 +9,9 @@ import { type AttrValue, parseTagAttributes } from './tag-parser.js';
 export interface ScanOptions {
   root: string;
   ignore: string[];
-  onFile?: (file: string, index: number, total: number) => void;
+  onDiscovered?: (total: number) => void;
+  /** Called after each file with the number of image references found so far. */
+  onFile?: (file: string, index: number, total: number, imagesSoFar: number) => void;
 }
 
 const FILE_PATTERN =
@@ -65,24 +67,25 @@ export async function scanCodebase(options: ScanOptions): Promise<ScanResult> {
     caseSensitiveMatch: false,
   });
   files.sort();
+  options.onDiscovered?.(files.length);
 
   const images: SourceImage[] = [];
   const errors: FileError[] = [];
 
   for (const [index, relative] of files.entries()) {
-    options.onFile?.(relative, index + 1, files.length);
     const absolute = path.join(root, relative);
     try {
       const info = await stat(absolute);
       if (info.size > MAX_FILE_BYTES) {
         errors.push({ file: relative, message: `Skipped: larger than ${MAX_FILE_BYTES / 1024 / 1024} MB` });
-        continue;
+      } else {
+        const text = await readFile(absolute, 'utf8');
+        images.push(...scanFile(text, relative, root));
       }
-      const text = await readFile(absolute, 'utf8');
-      images.push(...scanFile(text, relative, root));
     } catch (err) {
       errors.push({ file: relative, message: err instanceof Error ? err.message : String(err) });
     }
+    options.onFile?.(relative, index + 1, files.length, images.length);
   }
 
   return { root, filesScanned: files.length, images, errors };

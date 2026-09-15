@@ -13,7 +13,19 @@ export interface CrawlOptions {
   useSitemap: boolean;
   /** Returns true to stop scheduling new pages (e.g. after Ctrl+C). */
   shouldStop?: () => boolean;
-  onPage?: (page: PageResult, visited: number) => void;
+  onSitemap?: (urlCount: number) => void;
+  onPageStart?: (url: string, progress: CrawlProgress) => void;
+  onPage?: (page: PageResult, progress: CrawlProgress) => void;
+}
+
+/** Live counters for progress displays. */
+export interface CrawlProgress {
+  visited: number;
+  queued: number;
+  active: string[];
+  images: number;
+  uniqueImages: number;
+  errors: number;
 }
 
 interface QueueItem {
@@ -45,8 +57,21 @@ export async function crawl(options: CrawlOptions): Promise<CrawlResult> {
 
   enqueue(startUrl, 0);
   if (options.useSitemap) {
-    for (const url of await readSitemap(origin, options.timeoutMs)) enqueue(url, 1);
+    const sitemapUrls = await readSitemap(origin, options.timeoutMs);
+    for (const url of sitemapUrls) enqueue(url, 1);
+    options.onSitemap?.(sitemapUrls.length);
   }
+
+  const active = new Set<string>();
+  const uniqueImages = new Set<string>();
+  const progress = (): CrawlProgress => ({
+    visited: pages.length,
+    queued: queue.length,
+    active: [...active],
+    images: images.length,
+    uniqueImages: uniqueImages.size,
+    errors: errors.length,
+  });
 
   let started = 0;
   const visit = async ({ url, depth }: QueueItem): Promise<void> => {
@@ -60,6 +85,8 @@ export async function crawl(options: CrawlOptions): Promise<CrawlResult> {
       linkCount: 0,
       note: null,
     };
+    active.add(url);
+    options.onPageStart?.(url, progress());
     try {
       const loaded = await loader.load(url);
       page.finalUrl = loaded.finalUrl;
@@ -91,7 +118,10 @@ export async function crawl(options: CrawlOptions): Promise<CrawlResult> {
       }
 
       const { images: found, links } = extractPage(loaded.html, loaded.finalUrl);
-      for (const image of found) images.push({ pageUrl: loaded.finalUrl, ...image });
+      for (const image of found) {
+        images.push({ pageUrl: loaded.finalUrl, ...image });
+        uniqueImages.add(image.imageUrl);
+      }
       page.imageCount = found.length;
       page.linkCount = links.length;
       for (const link of links) {
@@ -103,8 +133,9 @@ export async function crawl(options: CrawlOptions): Promise<CrawlResult> {
       page.note = `Error: ${message}`;
       errors.push({ url, message });
     } finally {
+      active.delete(url);
       pages.push(page);
-      options.onPage?.(page, pages.length);
+      options.onPage?.(page, progress());
     }
   };
 
