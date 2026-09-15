@@ -17,7 +17,7 @@ Requires Node.js 22.12+.
 
 ```sh
 # maintainer, in the project folder:
-npm pack                      # builds TypeScript, creates img-scrapper-0.1.0.tgz
+npm run release && npm pack   # build dist/, then create img-scrapper-0.1.0.tgz
 
 # colleague:
 npm install -g img-scrapper-0.1.0.tgz
@@ -127,7 +127,9 @@ npm link                               # expose the global img-scrapper command 
 npm run release                        # clean build + stage dist/ (run before committing src/ changes)
 ```
 
-`dist/` is committed because global git installs can't run a build step. CI (`.github/workflows/check-dist.yml`)
+`dist/` is committed because global git installs can't run a build step. For the same reason `package.json`
+must not have `prepare`, `prepack` or `preinstall` scripts: with any of them, npm tries to build the clone
+during `npm install -g git+...` and breaks the install. CI (`.github/workflows/check-dist.yml`)
 fails if `dist/` doesn't match a fresh build of `src/`.
 
 Project layout:
