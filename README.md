@@ -33,6 +33,28 @@ npm install -g git+https://github.com/VikramSBizzFly/img-scrapper.git
 
 ## Usage
 
+### Interactive mode
+
+Run it with no arguments for an animated welcome screen and a step-by-step wizard:
+
+```sh
+img-scrapper
+```
+
+It asks what to audit (website or folder), the URL or folder, and the options. At the end it prints the
+equivalent one-line command, so you can skip the questions next time.
+
+While it runs you get a live dashboard (progress bar, pages/s, images found, pages being loaded), a line for
+every page, and a summary box with charts of image types when it finishes.
+
+Animations and colors turn off automatically when output is piped or in CI. To turn them off yourself:
+
+| Flag / env | Effect |
+|---|---|
+| `--plain` | no animations, no colors |
+| `--no-color` or `NO_COLOR=1` | no colors |
+| `--no-banner` (on `crawl` / `scan`) | skip the welcome banner |
+
 ### crawl: visit every page of a site
 
 ```sh
@@ -109,6 +131,8 @@ src/crawl/url.ts          # URL normalizing, srcset / css url parsing
 src/scan/scanner.ts       # file walking and image reference detection
 src/scan/tag-parser.ts    # tolerant HTML/JSX/Vue attribute parser
 src/excel/writer.ts       # exceljs workbook writer
+src/commands/wizard.ts    # interactive mode (@clack/prompts)
+src/ui/                   # terminal UI: banner, gradients, live region, progress bars, boxes, charts
 tsconfig.json             # strict, NodeNext ESM config (used by editor + typecheck)
 tsconfig.build.json       # build config (no source maps, excludes tests)
 obfuscator.config.json    # javascript-obfuscator options applied to dist/ after build
