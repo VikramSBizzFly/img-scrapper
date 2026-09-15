@@ -2,6 +2,10 @@ import { createRequire } from 'node:module';
 import { Command, InvalidArgumentError } from 'commander';
 import { type CrawlCommandOptions, runCrawl } from './commands/crawl.js';
 import { runScan, type ScanCommandOptions } from './commands/scan.js';
+import { runWizard } from './commands/wizard.js';
+import { bannerText } from './ui/banner.js';
+import { BRAND, c, gradient } from './ui/style.js';
+import { caps, usePlainOutput } from './ui/term.js';
 
 interface PackageJson {
   version: string;
@@ -33,7 +37,25 @@ export async function run(argv: string[]): Promise<void> {
   program
     .name('img-scrapper')
     .description(pkg.description)
-    .version(pkg.version);
+    .version(pkg.version)
+    .option('--plain', 'no animations or colors (also automatic when output is piped or in CI)')
+    .option('--no-color', 'disable colors')
+    .addHelpText('beforeAll', () => bannerText())
+    .configureHelp({
+      styleTitle: (s) => c.bold(gradient(s, BRAND)),
+      styleCommandText: (s) => c.bold(c.cyan(s)),
+      styleSubcommandTerm: (s) => c.cyan(s),
+      styleOptionTerm: (s) => c.magenta(s),
+      styleArgumentTerm: (s) => c.yellow(s),
+      styleDescriptionText: (s) => c.dim(s),
+    })
+    .hook('preAction', () => {
+      if (program.opts().plain) usePlainOutput();
+    })
+    .action(async () => {
+      if (caps.interactive && !program.opts().plain) await runWizard();
+      else program.help();
+    });
 
   program
     .command('crawl')
@@ -46,6 +68,7 @@ export async function run(argv: string[]): Promise<void> {
     .option('-t, --timeout <ms>', 'page load timeout in milliseconds', positiveInt, 15_000)
     .option('-b, --browser', 'render pages in a headless browser (for React/Vue/Angular apps)', false)
     .option('--no-sitemap', 'do not read /sitemap.xml to find extra pages')
+    .option('--no-banner', 'skip the welcome banner')
     .action(async (url: string, options: CrawlCommandOptions) => {
       await runCrawl(url, options);
     });
@@ -56,6 +79,7 @@ export async function run(argv: string[]): Promise<void> {
     .argument('[dir]', 'project folder', '.')
     .option('-o, --out <file>', 'output Excel file', 'img-scan-report.xlsx')
     .option('-i, --ignore <glob>', 'extra glob to ignore (repeatable), e.g. -i "**/tests/**"', collect, [])
+    .option('--no-banner', 'skip the welcome banner')
     .action(async (dir: string, options: ScanCommandOptions) => {
       await runScan(dir, options);
     });
