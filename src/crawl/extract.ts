@@ -1,5 +1,6 @@
 import * as cheerio from 'cheerio';
 import type { AltStatus, PageImage, PageImageSource } from '../types.js';
+import { describeSource } from '../http/image-source.js';
 import { parseCssUrls, parseSrcset, resolveUrl } from './url.js';
 
 export type RawImage = Omit<PageImage, 'pageUrl'>;
@@ -110,6 +111,8 @@ export function extractPage(html: string, pageUrl: string): ExtractResult {
       fileName: null,
       extension: 'svg',
       internal: null,
+      external: null,
+      sourceName: null,
       source: 'svg',
       alt: label,
       altStatus: hidden ? 'n/a' : label ? 'present' : 'missing',
@@ -150,12 +153,14 @@ function imageAttrs($img: Cheerio): ImageAttrs {
   };
 }
 
+const NO_SOURCE = { external: null, sourceName: null } as const;
+
 function describeUrl(
   raw: string | null,
   base: string,
   pageOrigin: string,
-): Pick<PageImage, 'imageUrl' | 'fileName' | 'extension' | 'internal'> {
-  if (!raw) return { imageUrl: '(no src)', fileName: null, extension: null, internal: null };
+): Pick<PageImage, 'imageUrl' | 'fileName' | 'extension' | 'internal' | 'external' | 'sourceName'> {
+  if (!raw) return { imageUrl: '(no src)', fileName: null, extension: null, internal: null, ...NO_SOURCE };
 
   if (raw.startsWith('data:')) {
     const mime = raw.slice(5).split(/[;,]/)[0] ?? '';
@@ -165,11 +170,13 @@ function describeUrl(
       fileName: null,
       extension: subtype,
       internal: true,
+      external: false,
+      sourceName: 'data URI',
     };
   }
 
   const url = resolveUrl(raw, base);
-  if (!url) return { imageUrl: raw, fileName: null, extension: null, internal: null };
+  if (!url) return { imageUrl: raw, fileName: null, extension: null, internal: null, ...NO_SOURCE };
 
   const lastSegment = url.pathname.split('/').pop() ?? '';
   let fileName = lastSegment;
@@ -179,5 +186,11 @@ function describeUrl(
     // keep the encoded name
   }
   const extension = /\.([a-z0-9]+)$/i.exec(lastSegment)?.[1]?.toLowerCase() ?? null;
-  return { imageUrl: url.href, fileName: fileName || null, extension, internal: url.origin === pageOrigin };
+  return {
+    imageUrl: url.href,
+    fileName: fileName || null,
+    extension,
+    internal: url.origin === pageOrigin,
+    ...describeSource(url.href, pageOrigin),
+  };
 }
