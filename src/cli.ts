@@ -67,6 +67,8 @@ export async function run(argv: string[]): Promise<void> {
     .option('-c, --concurrency <n>', 'pages loaded at the same time', positiveInt, 5)
     .option('-t, --timeout <ms>', 'page load timeout in milliseconds', positiveInt, 15_000)
     .option('-b, --browser', 'render pages in a headless browser (for React/Vue/Angular apps)', false)
+    .option('--check-images', 'request every unique image URL and record its HTTP status', false)
+    .option('--check-concurrency <n>', 'image checks running at the same time', positiveInt, 10)
     .option('--no-sitemap', 'do not read /sitemap.xml to find extra pages')
     .option('--no-banner', 'skip the welcome banner')
     .action(async (url: string, options: CrawlCommandOptions) => {

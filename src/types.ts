@@ -12,6 +12,10 @@ export interface PageImage {
   fileName: string | null;
   extension: string | null;
   internal: boolean | null;
+  /** True when the image is hosted on a different registrable domain than the crawled site. */
+  external: boolean | null;
+  /** Who hosts it: "Unsplash", a bare host like "cdn.example.com", or "data URI". */
+  sourceName: string | null;
   source: PageImageSource;
   alt: string | null;
   altStatus: AltStatus;

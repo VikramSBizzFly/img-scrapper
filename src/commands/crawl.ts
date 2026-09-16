@@ -1,9 +1,11 @@
 import path from 'node:path';
 import { type CrawlProgress, crawl } from '../crawl/crawler.js';
 import { createBrowserLoader, createFetchLoader, type PageLoader } from '../crawl/loaders.js';
+import { isFetchableImageUrl } from '../crawl/constants.js';
 import { buildCrawlReport } from '../crawl/report.js';
 import { parseStartUrl } from '../crawl/url.js';
 import { writeWorkbook } from '../excel/writer.js';
+import { type CheckProgress, checkImages, type ImageCheckOutcome } from '../http/image-check.js';
 import type { CrawlResult, PageResult } from '../types.js';
 import { showBanner } from '../ui/banner.js';
 import { finale, hint, topCounts } from '../ui/finale.js';
@@ -20,6 +22,8 @@ export interface CrawlCommandOptions {
   timeout: number;
   browser: boolean;
   sitemap: boolean;
+  checkImages: boolean;
+  checkConcurrency: number;
   banner?: boolean;
 }
 
@@ -117,14 +121,16 @@ export async function runCrawl(rawUrl: string, options: CrawlCommandOptions): Pr
     throw new Error(`Could not load ${startUrl.href}: ${firstError.message}`);
   }
 
+  const statuses = options.checkImages ? await runImageCheck(result, options, () => stopRequested) : undefined;
+
   console.log('');
   await task(
     'Building Excel report',
-    () => writeWorkbook(options.out, buildCrawlReport(startUrl.href, result, mode)),
+    () => writeWorkbook(options.out, buildCrawlReport(startUrl.href, result, mode, statuses)),
     () => 'Excel report written',
   );
 
-  printSummary(result, elapsed, stopRequested);
+  printSummary(result, elapsed, stopRequested, statuses);
   await finale(outPath);
 
   if (!options.browser && result.images.length === 0) {
@@ -133,6 +139,58 @@ export async function runCrawl(rawUrl: string, options: CrawlCommandOptions): Pr
   if (result.unvisited > 0) {
     hint(`${result.unvisited} discovered pages were not visited. Raise --max-pages to include them`);
   }
+}
+
+/** Requests every unique image URL once and reports the status it answered with. */
+async function runImageCheck(
+  result: CrawlResult,
+  options: CrawlCommandOptions,
+  shouldStop: () => boolean,
+): Promise<Map<string, ImageCheckOutcome>> {
+  const urls = [...new Set(result.images.map((i) => i.imageUrl))].filter(isFetchableImageUrl);
+  if (urls.length === 0) return new Map();
+
+  const started = Date.now();
+  let latest: CheckProgress = { checked: 0, total: urls.length, ok: 0, broken: 0, active: [] };
+
+  console.log('');
+  const region = new LiveRegion((frame) => checkDashboard(latest, started, frame));
+  region.start();
+  try {
+    return await checkImages({
+      urls,
+      concurrency: options.checkConcurrency,
+      timeoutMs: options.timeout,
+      shouldStop,
+      onProgress: (progress) => {
+        latest = progress;
+      },
+    });
+  } finally {
+    region.stop();
+  }
+}
+
+function checkDashboard(p: CheckProgress, started: number, frame: number): string[] {
+  const elapsed = Date.now() - started;
+  const ratio = p.total === 0 ? 1 : p.checked / p.total;
+  const barWidth = Math.max(10, Math.min(36, columns() - 60));
+
+  const lines = [
+    `  ${spinner(frame)} ${c.bold(gradient('Checking images', BRAND, frame / 25))}  ${progressBar(ratio, barWidth, BRAND, frame)}  ${c.bold(String(p.checked))}${c.dim(`/${p.total}`)}  ${c.bold(`${Math.round(ratio * 100)}%`)}  ${c.dim(formatDuration(elapsed))}`,
+    '',
+    `    ${stat('ok', formatNumber(p.ok), c.green)}   ${stat('broken', String(p.broken), p.broken ? c.red : c.dim)}`,
+  ];
+  if (p.active.length > 0) {
+    lines.push('');
+    for (const url of p.active.slice(0, 5)) {
+      lines.push(
+        `    ${gradient(symbols.arrow, BRAND, frame / 10)} ${c.dim(truncate(url, Math.max(20, columns() - 10)))}`,
+      );
+    }
+    if (p.active.length > 5) lines.push(c.dim(`      +${p.active.length - 5} more`));
+  }
+  return lines;
 }
 
 async function probe(url: string, timeoutMs: number): Promise<{ status: number; ms: number }> {
@@ -221,9 +279,18 @@ function shortUrl(url: string, origin?: string): string {
   }
 }
 
-function printSummary(result: CrawlResult, elapsed: number, stopped: boolean): void {
+function printSummary(
+  result: CrawlResult,
+  elapsed: number,
+  stopped: boolean,
+  statuses?: Map<string, ImageCheckOutcome>,
+): void {
   const missingAlt = result.images.filter((i) => i.altStatus === 'missing').length;
   const unique = new Set(result.images.map((i) => i.imageUrl)).size;
+  const external = new Set(result.images.filter((i) => i.external).map((i) => i.imageUrl)).size;
+  const broken = [...(statuses?.values() ?? [])].filter(
+    (o) => o.kind === 'timeout' || o.kind === 'error' || (o.kind === 'http' && o.code >= 300),
+  ).length;
   const title = stopped ? `${c.yellow(symbols.warn)} Crawl stopped early` : `${c.green(symbols.ok)} Crawl complete`;
 
   const stats = statGrid([
@@ -232,6 +299,10 @@ function printSummary(result: CrawlResult, elapsed: number, stopped: boolean): v
     ['Images found', c.bold(c.cyan(formatNumber(result.images.length)))],
     ['Unique images', c.bold(c.magenta(formatNumber(unique)))],
     ['Missing alt', missingAlt ? c.bold(c.yellow(formatNumber(missingAlt))) : c.green('0')],
+    ['External images', c.bold(c.blue(formatNumber(external)))],
+    ...(statuses
+      ? [['Broken images', broken ? c.bold(c.red(formatNumber(broken))) : c.green('0')] satisfies [string, string]]
+      : []),
     ['Errors', result.errors.length ? c.bold(c.red(String(result.errors.length))) : c.green('0')],
   ]);
 

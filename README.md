@@ -69,6 +69,7 @@ Animations and colors turn off automatically when output is piped or in CI. To t
 img-scrapper crawl http://localhost:3000
 img-scrapper crawl localhost:3000 -o reports/site.xlsx --max-pages 200
 img-scrapper crawl localhost:5173 --browser     # React / Vue / Angular apps
+img-scrapper crawl localhost:3000 --check-images  # also verify every image URL loads
 ```
 
 How it works:
@@ -81,18 +82,35 @@ How it works:
    (`#hash` and trailing `/` are ignored, and PDFs, mailto and external links are skipped).
 5. Repeat until the list is empty or `--max-pages` / `--depth` is reached. Press Ctrl+C to stop early and still get the report.
 
-| Option                  | Default                 |                                                                          |
-| ----------------------- | ----------------------- | ------------------------------------------------------------------------ |
-| `-o, --out <file>`      | `img-crawl-report.xlsx` | output file                                                              |
-| `-m, --max-pages <n>`   | 500                     | stop after n pages                                                       |
-| `-d, --depth <n>`       | 10                      | clicks away from the start page (0 = start page only)                    |
-| `-c, --concurrency <n>` | 5                       | pages loaded at once                                                     |
-| `-t, --timeout <ms>`    | 15000                   | per page                                                                 |
-| `-b, --browser`         | off                     | render pages with JavaScript (needs Chrome, Edge or Playwright Chromium) |
-| `--no-sitemap`          |                         | don't read `/sitemap.xml` for extra pages                                |
+| Option                    | Default                 |                                                                          |
+| ------------------------- | ----------------------- | ------------------------------------------------------------------------ |
+| `-o, --out <file>`        | `img-crawl-report.xlsx` | output file                                                              |
+| `-m, --max-pages <n>`     | 500                     | stop after n pages                                                       |
+| `-d, --depth <n>`         | 10                      | clicks away from the start page (0 = start page only)                    |
+| `-c, --concurrency <n>`   | 5                       | pages loaded at once                                                     |
+| `-t, --timeout <ms>`      | 15000                   | per page                                                                 |
+| `-b, --browser`           | off                     | render pages with JavaScript (needs Chrome, Edge or Playwright Chromium) |
+| `--no-sitemap`            |                         | don't read `/sitemap.xml` for extra pages                                |
+| `--check-images`          | off                     | request every unique image URL and record its HTTP status                |
+| `--check-concurrency <n>` | 10                      | image checks running at once                                             |
 
 Excel sheets: **Summary**, **Images** (one row per image per page), **Unique Images**
 (with page count), **Pages** and **Errors**.
+
+The Images and Unique Images sheets carry four columns about where an image comes from and
+whether it still works:
+
+| Column           | Meaning                                                                                                                                                         |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **External**     | `yes` when the image is hosted on a different domain than the crawled site. A site's own CDN subdomain (`cdn.mysite.com` on `mysite.com`) counts as internal.   |
+| **Source**       | who hosts it - a known provider (`Unsplash`, `Cloudinary`, `Amazon S3`, `Google`, ...) or the bare host                                                         |
+| **Status**       | `200 OK`, `404 Not Found`, `301 Moved Permanently` - the code and its reason phrase. `not checked` without `--check-images`, `n/a` for inline SVG and data URIs |
+| **Status Class** | `2xx Success`, `3xx Redirection`, `4xx Client Error`, `5xx Server Error`                                                                                        |
+
+`--check-images` sends one `HEAD` (falling back to `GET`) per **unique** image URL and does not
+follow redirects, so a stale URL shows up as its `301` rather than as the `200` it lands on.
+It adds a **Broken Images** sheet listing every non-2xx image with the pages that reference it.
+Status names come from `docs/http_status_code_master_rules.md`.
 
 > If the site is a single-page app and the report is empty, use `--browser`. Without it only
 > server-sent HTML is read.
