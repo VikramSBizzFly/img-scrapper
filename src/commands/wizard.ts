@@ -56,6 +56,13 @@ async function crawlWizard(): Promise<void> {
     }),
   );
 
+  const checkImages = guard(
+    await p.confirm({
+      message: 'Check that every image URL still loads? (slower - one request per image)',
+      initialValue: false,
+    }),
+  );
+
   const maxPages = Number(
     guard(
       await p.text({
@@ -88,6 +95,7 @@ async function crawlWizard(): Promise<void> {
     'img-scrapper crawl',
     url,
     browser ? '--browser' : '',
+    checkImages ? '--check-images' : '',
     maxPages !== 500 ? `-m ${maxPages}` : '',
     depth !== 10 ? `-d ${depth}` : '',
     concurrency !== 5 ? `-c ${concurrency}` : '',
@@ -98,7 +106,18 @@ async function crawlWizard(): Promise<void> {
   p.note(c.cyan(command), 'Tip: skip the questions next time');
   p.outro(gradient('Starting crawl', BRAND));
 
-  await runCrawl(url, { out, maxPages, depth, concurrency, browser, timeout: 15_000, sitemap: true, banner: false });
+  await runCrawl(url, {
+    out,
+    maxPages,
+    depth,
+    concurrency,
+    browser,
+    checkImages,
+    checkConcurrency: 10,
+    timeout: 15_000,
+    sitemap: true,
+    banner: false,
+  });
 }
 
 async function scanWizard(): Promise<void> {
