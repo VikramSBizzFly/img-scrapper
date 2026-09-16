@@ -17,10 +17,10 @@ Requires Node.js 22.12+.
 
 ```sh
 # maintainer, in the project folder:
-npm run release && npm pack   # build dist/, then create img-scrapper-0.1.0.tgz
+npm run release && npm pack   # build dist/, then create img-scrapper-<version>.tgz
 
 # colleague:
-npm install -g img-scrapper-0.1.0.tgz
+npm install -g ./img-scrapper-*.tgz
 ```
 
 **From a git repo:**
@@ -30,6 +30,9 @@ npm install -g git+https://github.com/VikramSBizzFly/img-scrapper.git
 ```
 
 The repo ships prebuilt code in `dist/`, so installing doesn't compile anything.
+
+**Updating:** run the same install command again. The patch version bumps on every commit that touches
+`src/`, so npm sees a new version and replaces the old build.
 
 **Troubleshooting:** if an earlier install failed (for example with `'tsc' is not recognized`), remove the
 leftovers and install again:
@@ -154,6 +157,15 @@ npm run release                        # clean build + stage dist/ (the pre-comm
 1. formats staged files with Prettier
 2. if `src/`, `tsconfig*.json`, `obfuscator.config.json` or `package.json` are staged, runs `npm run typecheck`
    (a type error blocks the commit) and `npm run release`, so the rebuilt `dist/` goes into the same commit
+3. runs `scripts/bump-version.mjs`, which bumps the patch version in `package.json` and `package-lock.json`
+   when `src/` or `package.json` is staged, so the bump lands in the same commit
+
+The bump is skipped during a merge, rebase, cherry-pick or revert, and in CI. To skip it once:
+
+```sh
+$env:NO_BUMP=1; git commit -m "..."   # PowerShell
+NO_BUMP=1 git commit -m "..."         # bash
+```
 
 The hook is enabled with `npm run hooks` instead of the usual `"prepare": "husky"` for the reason below.
 
