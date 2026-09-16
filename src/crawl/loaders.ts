@@ -43,7 +43,8 @@ export function createFetchLoader(timeoutMs: number): PageLoader {
   };
 }
 
-function describeFetchError(err: unknown, timeoutMs: number): string {
+/** Turns a fetch rejection into a short, human-readable reason. */
+export function describeFetchError(err: unknown, timeoutMs: number): string {
   if (err instanceof Error) {
     if (err.name === 'TimeoutError') return `Timed out after ${timeoutMs} ms`;
     const cause = (err as Error & { cause?: NodeJS.ErrnoException }).cause;
