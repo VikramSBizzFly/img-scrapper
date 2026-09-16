@@ -5,3 +5,4 @@ img-scan-report.xlsx
 *.tgz
 *.tsbuildinfo
 .env
+docs/
